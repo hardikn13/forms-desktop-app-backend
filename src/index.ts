@@ -70,6 +70,24 @@ app.get("/read", (req, res) => {
   });
 });
 
+// Endpoint to get total number of submissions
+app.get("/totalSubmissions", (req, res) => {
+  fs.readFile(path.join(__dirname, "../db.json"), "utf-8", (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error reading database");
+    }
+    let submissions = [];
+    try {
+      submissions = JSON.parse(data);
+    } catch (parseError) {
+      console.error(parseError);
+      return res.status(500).send("Error parsing database content");
+    }
+    res.send(submissions.length.toString());
+  });
+});
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
