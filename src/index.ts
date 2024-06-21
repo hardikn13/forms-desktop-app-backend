@@ -62,7 +62,7 @@ app.get("/read", (req, res) => {
     const submissions = JSON.parse(data);
     const idx = parseInt(index as string);
 
-    if (idx < 0 || idx >= submissions.length) {
+    if (isNaN(idx) || idx < 0 || idx >= submissions.length) {
       return res.status(404).send("Submission not found");
     }
 
@@ -85,6 +85,56 @@ app.get("/totalSubmissions", (req, res) => {
       return res.status(500).send("Error parsing database content");
     }
     res.send(submissions.length.toString());
+  });
+});
+
+// Endpoint to delete a submission
+app.delete("/delete", (req, res) => {
+  const { index } = req.query;
+
+  console.log(`Received request to delete submission at index: ${index}`);
+
+  if (index === undefined) {
+    return res.status(400).send("Index query parameter is required");
+  }
+
+  const idx = parseInt(index as string);
+  if (isNaN(idx)) {
+    console.error(`Invalid index: ${index}`);
+    return res.status(400).send("Index must be a number");
+  }
+
+  fs.readFile(path.join(__dirname, "../db.json"), "utf-8", (err, data) => {
+    if (err) {
+      console.error(`Error reading database: ${err.message}`);
+      return res.status(500).send("Error reading database");
+    }
+    let submissions = [];
+    try {
+      submissions = JSON.parse(data);
+    } catch (parseError) {
+      return res.status(500).send("Error parsing database content");
+    }
+
+    if (idx < 0 || idx >= submissions.length) {
+      console.error(`Submission not found at index: ${idx}`);
+      return res.status(404).send("Submission not found");
+    }
+
+    submissions.splice(idx, 1);
+
+    fs.writeFile(
+      path.join(__dirname, "../db.json"),
+      JSON.stringify(submissions, null, 2),
+      (writeErr) => {
+        if (writeErr) {
+          console.error(`Error writing to database: ${writeErr.message}`);
+          return res.status(500).send("Error writing to database");
+        }
+        console.log(`Submission deleted successfully at index: ${idx}`);
+        res.send("Submission deleted successfully!");
+      }
+    );
   });
 });
 
