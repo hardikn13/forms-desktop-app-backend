@@ -23,14 +23,26 @@ app.post("/submit", (req, res) => {
   const submission = { name, email, phone, github_link, stopwatch_time };
 
   fs.readFile(path.join(__dirname, "../db.json"), "utf-8", (err, data) => {
-    if (err) throw err;
-    const submissions = JSON.parse(data);
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error reading database");
+    }
+    let submissions = [];
+    try {
+      submissions = JSON.parse(data);
+    } catch (parseError) {
+      console.error(parseError);
+      return res.status(500).send("Error parsing database content");
+    }
     submissions.push(submission);
     fs.writeFile(
       path.join(__dirname, "../db.json"),
       JSON.stringify(submissions, null, 2),
-      (err) => {
-        if (err) throw err;
+      (writeErr) => {
+        if (writeErr) {
+          console.error(writeErr);
+          return res.status(500).send("Error writing to database");
+        }
         res.send("Submission saved!");
       }
     );
